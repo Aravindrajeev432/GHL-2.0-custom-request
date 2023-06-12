@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bootstrap demo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+  </head>
+  <body>
+    <div class="container ">
+  <div class="row d-flex justify-content-center ">
+    <div class="col-8 ">
+          <div class="col">
+              <div class="p-3" style="height:18px;">
+                  <div id="errorMessage" style="
+            text-align: center;" class="error-message text-danger"></div>
+            <div id="successMessage" style="
+            text-align: center;" class="success-message text-success"></div>
+              </div>
+          </div>
+    </div>
+    <form id="onboard_form_id">
+         {% csrf_token %}
+      <div class="row d-flex justify-content-center">
+        <div class="col-8">
+
+            <div class="row">
+                <div class="col">
+                    <div class="mb-3">
+  <label for="location_id_id" class="form-label">Location ID</label>
+  <input type="text" class="form-control" id="location_id_id" placeholder="Please  Enter The Location ID" required>
+                    </div>
+                </div>
+            </div>
+                        <div class="row">
+                <div class="col">
+                    <div class="mb-3">
+  <label for="access_code_id" class="form-label">Access Code</label>
+  <input type="text" class="form-control" id="access_code_id" placeholder="Please Enter The Access Code" required>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <div class="mb-3">
+                        <label for="public_api_key_id" class="form-label">Public API Key</label>
+                        <input type="text" class="form-control" id="public_api_key_id" placeholder="Please Enter The Public API Key" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col">
+                    <button class="btn btn-primary">Validate Credentials & Submit</button>
+                </div>
+                <div class="col">
+                    <a href={{ access_url }}>
+                    <button type="button" class="btn btn-success">Get Your Access Code</button>
+                        </a>
+                </div>
+            </div>
+
+
+        </div>
+
+      </div>
+        </form>
+    </div>
+
+
+</div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <script>
+      const urlParams = new URLSearchParams(window.location.search);
+       const code = urlParams.get('code');
+        console.log(code)
+        if(code){
+var inputField = document.getElementById('access_code_id');
+  inputField.value = code;
+        }
+        function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+
+$(document).ready(function() {
+        // Handle form submission
+        $('#onboard_form_id').submit(function(event) {
+            event.preventDefault(); // Prevent default form submission
+
+            var form = $(this);
+            var url = form.attr('action');
+            var formData = new FormData(form[0]);
+            var locationId = $("#location_id_id").val();
+    var accessCode = $("#access_code_id").val();
+    var publicKey = $("#public_api_key_id").val();
+    const csrftoken = getCookie('csrftoken');
+
+            // AJAX request
+            $.ajax({
+                type: 'POST',
+                url: url,
+                headers: {
+                "X-CSRFToken": csrftoken // Include the CSRF token in the headers
+                },
+                data: {
+                location_id_id: locationId,
+        access_code_id: accessCode,
+        public_api_key_id: publicKey
+        },
+
+                success: function(response) {
+                    console.log(response)
+                    // Handle success response
+                    // alert('Form submitted successfully!');
+
+                },
+                error: function(xhr, status, error) {
+                    // Handle error response
+                    console.log(error)
+                    if (xhr.status === 400){
+                    console.log("Erriro")
+                        var errorMessage = "Incorrect credentials!";
+                    $('#errorMessage').text(errorMessage).fadeIn();
+                        setTimeout(function() {
+                    $('#errorMessage').fadeOut('slow');
+                }, 9000);
+                    }
+                    else if(xhr.status === 409){
+                        var errorMessage = "Email Already Registered";
+                    }
+                    else if(xhr.status === 422){
+                        var errorMessage = "Invalid GHL location Id"
+                    }
+                    else{
+                        var errorMessage = "Something went wrong, please try again!";
+                    }
+
+
+
+                    // alert('Error submitting the form. Please try again.');
+                }
+            });
+
+        });
+    });
+
+
+  </script>
+  </body>
+</html>
