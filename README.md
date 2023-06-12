@@ -4,7 +4,7 @@
 How manage access token and refresh token 
 
 
-## 1 Create Model
+##  Create Model
 
 
     location_id = models.CharField(max_length=300)
@@ -19,11 +19,11 @@ How manage access token and refresh token
 This approach avoids the edge case of token expiration just before the request.
 after the first token validity check.
 ## How?
-We're creating a custom fuction in utils.py. This fuction accepts method, location id , url and params
+We're creating a custom function in utils.py. This function accepts method, location id , url and params
 
-we're gonna use this fuction for every request
+we're going to use this function for every request
 
-this function checks token validity before request if token expaired we're updating the token 
+this function checks token validity before request if token expired we're updating the token 
 ## Code 👨🏻‍💻
 Checkout custom_requests()
 in utils.py /auth_app 

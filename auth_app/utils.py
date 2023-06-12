@@ -16,7 +16,7 @@ def custom_requests(location_id, method, url, data=None, params=None):
     try:
         location = AuthInfo.objects.get(location_id=location_id)
     except AuthInfo.DoesNotExist:
-        return JsonResponse({"status_code": 400})
+        return {"status_code": 400}
     try:
         current_datetime = timezone.now()
         exp_datetime = location.created_at + timedelta(seconds=location.expires_in)
