@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timedelta
+from datetime import timedelta
 from urllib.parse import urlencode, quote
 from django.utils import timezone
 from django.http import JsonResponse
