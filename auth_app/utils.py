@@ -26,7 +26,7 @@ def custom_requests_older(location_id, method, url, data=None, params=None):
 
     except ExpiredTokenException:
         # update access code
-        url = "https://services.leadconnectorhq.com/oauth/token"
+        auth_url = "https://services.leadconnectorhq.com/oauth/token"
 
         payload = {
             "client_id": settings.CLIENT_ID,
@@ -40,7 +40,7 @@ def custom_requests_older(location_id, method, url, data=None, params=None):
             "Accept": "application/json"
         }
 
-        response = requests.post(url, data=payload, headers=headers)
+        response = requests.post(auth_url, data=payload, headers=headers)
         if response.status_code != 200:
             print(response.text)
             return {"status_code": 400}
@@ -86,7 +86,7 @@ def custom_requests(location_id, method, url, data=None, params=None):
     if exp_datetime < current_datetime:
         # expired
         print('expired')
-        url = "https://services.leadconnectorhq.com/oauth/token"
+        auth_url = "https://services.leadconnectorhq.com/oauth/token"
 
         payload = {
             "client_id": settings.CLIENT_ID,
@@ -100,7 +100,7 @@ def custom_requests(location_id, method, url, data=None, params=None):
             "Accept": "application/json"
         }
 
-        response = requests.post(url, data=payload, headers=headers)
+        response = requests.post(auth_url, data=payload, headers=headers)
         if response.status_code != 200:
             print(response.text)
             return {"status_code": response.status_code}
