@@ -1,3 +1,4 @@
+import time
 import requests
 from datetime import timedelta
 
@@ -6,128 +7,65 @@ from django.conf import settings
 from .models import AuthInfo
 
 
-class ExpiredTokenException(Exception):
-    pass
 
+def custom_request(
+    method: str,
+    url: str,
+    location_id: str,
+    params: dict[str, str] = None,
+    data: dict[str, str] = None,
+) -> requests.Response:
+    """Sends a request to GHL API.
+    :param method: HTTP method (e.g. 'GET', 'POST', 'PUT', 'PATCH', 'DELETE')
+    :param url: URL of the GHL API endpoint
+    :param location_id: Location ID
+    :param params: Query parameters
+    :param data: Request body
+    """
 
-def custom_requests_older(location_id, method, url, data=None, params=None):
-    try:
-        location = AuthInfo.objects.get(location_id=location_id)
-    except AuthInfo.DoesNotExist:
-        return {"status_code": 400}
-    try:
-        current_datetime = timezone.now()
-        exp_datetime = location.created_at + timedelta(seconds=location.expires_in)
-        if exp_datetime < current_datetime:
-            # expired
-            print("expired token")
-            raise ExpiredTokenException
-        access_token = location.access_token
-
-    except ExpiredTokenException:
-        # update access code
-        auth_url = "https://services.leadconnectorhq.com/oauth/token"
-
-        payload = {
-            "client_id": settings.CLIENT_ID,
-            "client_secret": settings.CLIENT_SECRET,
-            "grant_type": "refresh_token",
-            "refresh_token": location.refresh_token,
-
-        }
-        headers = {
-            "Content-Type": "application/x-www-form-urlencoded",
-            "Accept": "application/json"
-        }
-
-        response = requests.post(auth_url, data=payload, headers=headers)
-        if response.status_code != 200:
-            print(response.text)
-            return {"status_code": 400}
-        response_data = response.json()
-        location.access_token = response_data['access_token']
-        location.refresh_token = response_data['refresh_token']
-        location.expires_in = response_data['expires_in']
-        location.created_at = timezone.now()
-        location.save(update_fields=['access_token', 'refresh_token', 'expires_in', 'created_at'])
-
-        access_token = response_data['access_token']
-
-    finally:
-
-        headers = {
-            "Authorization": f"Bearer {access_token}",
-            "Version": "2021-07-28",
-            "Accept": "application/json"
-        }
-        if method == "POST":
-            response = requests.post(url, json=data, headers=headers, params=params)
-            if response.status_code != 200:
-                return {"status_code": response.status_code, "message": response.text}
-            return {"data": response.json(), "status_code": 200, "message": response.text}
-        elif method == "GET":
-            print("GET request")
-            response = requests.get(url, headers=headers, params=params)
-            if response.status_code != 200:
-                print(response.text)
-                return {"status_code": response.status_code, "message": response.text}
-
-            return {"data": response.json(), "status_code": 200, "message": "response.text"}
-
-
-def custom_requests(location_id, method, url, data=None, params=None):
-    try:
-        location = AuthInfo.objects.get(location_id=location_id)
-    except AuthInfo.DoesNotExist:
-        return {"status_code": 400}
+    auth = AuthInfo.objects.get(location_id=location_id)
     current_datetime = timezone.now()
-    exp_datetime = location.created_at + timedelta(seconds=location.expires_in)
-    access_token = location.access_token
+    exp_datetime = auth.last_updated_at + timedelta(seconds=auth.expires_in)
     if exp_datetime < current_datetime:
         # expired
-        print('expired')
         auth_url = "https://services.leadconnectorhq.com/oauth/token"
-
+        
         payload = {
             "client_id": settings.CLIENT_ID,
             "client_secret": settings.CLIENT_SECRET,
             "grant_type": "refresh_token",
-            "refresh_token": location.refresh_token,
-
+            "refresh_token": auth.refresh_token,
         }
         headers = {
             "Content-Type": "application/x-www-form-urlencoded",
-            "Accept": "application/json"
+            "Accept": "application/json",
         }
-
         response = requests.post(auth_url, data=payload, headers=headers)
-        if response.status_code != 200:
-            print(response.text)
-            return {"status_code": response.status_code}
-        response_data = response.json()
-        location.access_token = response_data['access_token']
-        location.refresh_token = response_data['refresh_token']
-        location.expires_in = response_data['expires_in']
-        location.created_at = timezone.now()
-        location.save(update_fields=['access_token', 'refresh_token', 'expires_in', 'created_at'])
 
-        access_token = response_data['access_token']
-    # after new access token if expired
+        auth.access_token = response.json()["access_token"]
+        auth.refresh_token = response.json()["refresh_token"]
+        auth.expires_in = response.json()["expires_in"]
+        auth.last_updated_at = timezone.now()
+        auth.save()
     headers = {
-        "Authorization": f"Bearer {access_token}",
+        "Authorization": f"Bearer {auth.access_token}",
         "Version": "2021-07-28",
-        "Accept": "application/json"
+        "Accept": "application/json",
+        "Content-Type": "application/json",
     }
-    if method == "POST":
-        response = requests.post(url, json=data, headers=headers, params=params)
-        if response.status_code != 200:
-            return {"status_code": response.status_code, "message": response.text}
-        return {"data": response.json(), "status_code": 200, "message": response.text}
-    elif method == "GET":
-        print("GET request")
-        response = requests.get(url, headers=headers, params=params)
-        if response.status_code != 200:
-            print(response.text)
-            return {"status_code": response.status_code, "message": response.text}
+    while True:
+        response = requests.request(
+            method, url, headers=headers, params=params, json=data
+        )
+        rate_limit_remaining = response.headers.get("x-ratelimit-remaining")
+        rate_limit_interval = response.headers.get("x-ratelimit-interval-milliseconds")
+        try:
+            if int(rate_limit_remaining) <= 3:
+                time.sleep(rate_limit_interval / 1000)
+            else:
+                break
+        except Exception as e:
 
-        return {"data": response.json(), "status_code": 200, "message": "response.text"}
+            raise (e)
+
+    return response

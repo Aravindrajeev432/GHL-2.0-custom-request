@@ -8,3 +8,4 @@ class AuthInfo(models.Model):
     refresh_token = models.TextField(max_length=500)
     expires_in = models.PositiveIntegerField()
     created_at = models.DateTimeField()
+    last_updated_at = models.DateTimeField()
