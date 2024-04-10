@@ -30,4 +30,4 @@ This function checks token validity before request if token expired we're updati
 And alse checks for ratelimit using go highlevel  response's headers.
 ## Code 👨🏻‍💻
 Checkout custom_requests()
-in utils.py /auth_app 
+in  auth_app/utils.py
