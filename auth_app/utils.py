@@ -4,13 +4,15 @@ from datetime import timedelta
 from typing import Dict, Optional
 from django.utils import timezone
 from django.conf import settings
+
+from auth_app.exceptions import LocationNotFound
 from .models import AuthInfo
 
 
 def custom_request(
     method: str,
     url: str,
-    auth: AuthInfo,
+    location_id: str,
     params: Optional[Dict[str, str]] = None,
     data: Optional[Dict[str, str]] = None,
 ) -> requests.Response:
@@ -23,13 +25,15 @@ def custom_request(
     :param data: Request body
     :return: Response from the API
     """
-
+    try:
+        auth = AuthInfo.objects.get(location_id=location_id)
+    except AuthInfo.DoesNotExist:
+        raise LocationNotFound  
     current_datetime = timezone.now()
     exp_datetime = auth.last_updated_at + timedelta(seconds=auth.expires_in)
     if exp_datetime < current_datetime:
         # expired
         auth_url: str = "https://services.leadconnectorhq.com/oauth/token"
-
         payload: Dict[str, str] = {
             "client_id": settings.CLIENT_ID,
             "client_secret": settings.CLIENT_SECRET,
@@ -61,10 +65,10 @@ def custom_request(
             method, url, headers=headers, params=params, json=data
         )
         rate_limit_remaining: Optional[str] = response.headers.get(
-            "x-ratelimit-remaining",'0'
+            "x-ratelimit-remaining", "0"
         )
         rate_limit_interval: Optional[str] = response.headers.get(
-            "x-ratelimit-interval-milliseconds",'10000'
+            "x-ratelimit-interval-milliseconds", "10000"
         )
         try:
             if rate_limit_remaining and int(rate_limit_remaining) <= 3:

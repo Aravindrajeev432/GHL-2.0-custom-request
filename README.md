@@ -1,4 +1,7 @@
 
+[![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=for-the-badge)](https://github.com/psf/black)
+
+
 # Custom Request Function for GHL 2.0 api 
 
 How manage access token and refresh token 
@@ -34,5 +37,5 @@ If you are using the custom request function inside Django's request response cy
 It would be good to remove the rate limit management part to avoid Gunicorn timeout.
 
 ## Code 👨🏻‍💻
-Checkout custom_requests()
+Checkout custom_request()
 in  auth_app/utils.py
