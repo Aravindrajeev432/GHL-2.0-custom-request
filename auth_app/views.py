@@ -5,12 +5,10 @@ from django.utils import timezone
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.conf import settings
-from django.http import HttpResponse
-from django.views.decorators.csrf import csrf_exempt
 import requests
 
 from .models import AuthInfo
-from .utils import custom_requests
+from .utils import custom_request
 
 
 # Create your views here.
@@ -77,7 +75,7 @@ def capture_code(request):
 
 def ghl_get_contacts(request):
     location_id = "put GHL location id"
-    ghl_contact_response = custom_requests(
+    ghl_contact_response = custom_request(
         "GET", "https://services.leadconnectorhq.com/contacts/", location_id
     )
     return JsonResponse(
