@@ -9,3 +9,6 @@ class AuthInfo(models.Model):
     expires_in = models.PositiveIntegerField()
     created_at = models.DateTimeField()
     last_updated_at = models.DateTimeField()
+
+    class Meta:
+        get_latest_by = "last_updated_at"

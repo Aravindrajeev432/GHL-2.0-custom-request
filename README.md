@@ -29,6 +29,10 @@ We're going to use this function for every request.
 This function checks token validity before request if token expired we're updating the token.
 And alse checks for ratelimit using go highlevel  response's headers.
 
+## Things to Note!
+If you are using the custom request function inside Django's request response cycle,
+It would be good to remove the rate limit management part to avoid Gunicorn timeout.
+
 ## Code 👨🏻‍💻
 Checkout custom_requests()
 in  auth_app/utils.py

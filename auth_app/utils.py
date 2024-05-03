@@ -10,7 +10,7 @@ from .models import AuthInfo
 def custom_request(
     method: str,
     url: str,
-    location_id: str,
+    auth: AuthInfo,
     params: Optional[Dict[str, str]] = None,
     data: Optional[Dict[str, str]] = None,
 ) -> requests.Response:
@@ -23,8 +23,6 @@ def custom_request(
     :param data: Request body
     :return: Response from the API
     """
-
-    auth: AuthInfo = AuthInfo.objects.get(location_id=location_id)
 
     current_datetime = timezone.now()
     exp_datetime = auth.last_updated_at + timedelta(seconds=auth.expires_in)
@@ -63,10 +61,10 @@ def custom_request(
             method, url, headers=headers, params=params, json=data
         )
         rate_limit_remaining: Optional[str] = response.headers.get(
-            "x-ratelimit-remaining"
+            "x-ratelimit-remaining",'0'
         )
         rate_limit_interval: Optional[str] = response.headers.get(
-            "x-ratelimit-interval-milliseconds"
+            "x-ratelimit-interval-milliseconds",'10000'
         )
         try:
             if rate_limit_remaining and int(rate_limit_remaining) <= 3:
